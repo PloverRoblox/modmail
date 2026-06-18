@@ -45,7 +45,7 @@ class ConfigManager:
         "mention_channel_id": None,
         "update_channel_id": None,
         # updates
-        "update_notifications": True,
+        "update_notifications": False,
         # threads
         "sent_emoji": "\N{WHITE HEAVY CHECK MARK}",
         "blocked_emoji": "\N{NO ENTRY SIGN}",
@@ -213,15 +213,15 @@ class ConfigManager:
         "enable_eval": True,
         # github access token for private repositories
         "github_token": None,
-        "disable_autoupdates": False,
-        "disable_updates": False,
+        "disable_autoupdates": True,
+        "disable_updates": True,
         # Logging
         "log_level": "INFO",
         "stream_log_format": "plain",
         "file_log_format": "plain",
         "discord_log_level": "INFO",
         # data collection
-        "data_collection": True,
+        "data_collection": False,
     }
 
     colors = {

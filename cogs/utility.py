@@ -334,56 +334,29 @@ class Utility(commands.Cog):
         """Shows information about this bot."""
         embed = discord.Embed(color=self.bot.main_color, timestamp=discord.utils.utcnow())
         embed.set_author(
-            name="Modmail - About",
+            name="Pebble — About",
             icon_url=self.bot.user.display_avatar.url if self.bot.user.display_avatar else None,
-            url="https://discord.gg/F34cRU8",
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url if self.bot.user.display_avatar else None)
 
-        desc = "This is an open source Discord bot that serves as a means for "
-        desc += "members to easily communicate with server administrators in "
-        desc += "an organised manner."
-        embed.description = desc
+        embed.description = (
+            "Pebble is Plover's internal support assistant — an organised shared "
+            "inbox that lets contributors handle customer support inquiries."
+        )
 
         embed.add_field(name="Uptime", value=self.bot.uptime)
         embed.add_field(name="Latency", value=f"{self.bot.latency * 1000:.2f} ms")
         embed.add_field(name="Version", value=f"`{self.bot.version}`")
-        embed.add_field(name="Authors", value="`kyb3r`, `Taki`, `fourjr`")
         embed.add_field(name="Hosting Method", value=self.bot.hosting_method.name)
 
-        changelog = await Changelog.from_url(self.bot)
-        latest = changelog.latest_version
-
-        if self.bot.version.is_prerelease:
-            stable = next(filter(lambda v: not Version(v.version).is_prerelease, changelog.versions))
-            footer = f"You are on the prerelease version • the latest version is v{stable.version}."
-        elif self.bot.version < Version(latest.version):
-            footer = f"A newer version is available v{latest.version}."
-        else:
-            footer = "You are up to date with the latest version."
-
         embed.add_field(
-            name="Want Modmail in Your Server?",
-            value="Follow the installation guide on [GitHub](https://github.com/modmail-dev/modmail/) "
-            "and join our [Discord server](https://discord.gg/cnUpwrnpYb)!",
+            name="Built On",
+            value="Pebble is built on the open-source [Modmail](https://github.com/modmail-dev/modmail) "
+            "project by `kyb3r`, `Taki`, and `fourjr`, licensed under AGPL-3.0.",
             inline=False,
         )
 
-        embed.add_field(
-            name="Support the Developers",
-            value="This bot is completely free for everyone. We rely on kind individuals "
-            "like you to support us on [`Buy Me A Coffee`](https://buymeacoffee.com/modmaildev) (perks included for memberships) "
-            "to keep this bot free forever!",
-            inline=False,
-        )
-
-        embed.add_field(
-            name="Project Sponsors",
-            value=f"Checkout the people who supported Modmail with command `{self.bot.prefix}sponsors`!",
-            inline=False,
-        )
-
-        embed.set_footer(text=footer)
+        embed.set_footer(text="Pebble • Plover")
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["sponsor"])
@@ -392,21 +365,12 @@ class Utility(commands.Cog):
     async def sponsors(self, ctx):
         """Shows the sponsors of this project."""
 
-        async with self.bot.session.get(
-            "https://raw.githubusercontent.com/modmail-dev/modmail/master/SPONSORS.json"
-        ) as resp:
-            data = loads(await resp.text())
-
-        embeds = []
-
-        for elem in data:
-            embed = discord.Embed.from_dict(elem["embed"])
-            embeds.append(embed)
-
-        random.shuffle(embeds)
-
-        session = EmbedPaginatorSession(ctx, *embeds)
-        await session.run()
+        embed = discord.Embed(
+            color=self.bot.main_color,
+            title="Sponsors",
+            description="This is a private Pebble instance operated by Plover.",
+        )
+        await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True)
     @checks.has_permissions(PermissionLevel.OWNER)
