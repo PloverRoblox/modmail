@@ -150,6 +150,15 @@ docker compose up -d --build
 
 Discord caches previews, so use Discord's link or repost to refresh the embed.
 
+## Auto-start on boot
+
+All services use `restart: always`, and `setup.sh` enables Docker on boot, so
+the stack comes back automatically after a VM reboot — no action needed. Verify
+with `systemctl is-enabled docker` (should be `enabled`) and `docker compose ps`
+after a `sudo reboot`. For a bulletproof setup that also re-runs
+`docker compose up -d` (reconciling the compose file) on every boot, install the
+optional systemd unit — see the header of `pebble.service`.
+
 ## Updating later
 
 ```bash
