@@ -10,6 +10,11 @@ FROM ghcr.io/modmail-dev/logviewer:master
 COPY static/css/applemode.css /logviewer/static/css/applemode.css
 COPY static/img/og.png        /logviewer/static/img/og.png
 
+# Home page replaced with a searchable/filterable history browser + a
+# "who's online" sidebar (app.py adds the route, index.html the page).
+COPY app.py                   /logviewer/app.py
+COPY templates/index.html     /logviewer/templates/index.html
+
 # Inject the Apple stylesheet, set the Pebble link-preview (Open Graph) tags,
 # and rebrand the page title. The og:* tags shown when a log link is shared
 # (e.g. in Discord) become a fixed Pebble card instead of leaking recipient

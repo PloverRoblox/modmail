@@ -16,9 +16,12 @@
 	}
 
 	# Everything else must pass the role check before reaching the logviewer.
+	# copy_headers forwards the logged-in user's identity to the logviewer so it
+	# can show a profile + logout and a "who's online" list.
 	handle {
 		forward_auth authproxy:5000 {
 			uri /auth/verify
+			copy_headers X-Auth-Id X-Auth-Name X-Auth-Avatar
 		}
 		reverse_proxy logviewer:8000
 	}
