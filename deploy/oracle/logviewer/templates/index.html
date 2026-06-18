@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+
+<main class="history">
+  <div class="history__layout">
+
+    <section class="history__content">
+      <div class="history__head">
+        <h1 class="history__title">Pebble Logs</h1>
+        <p class="history__sub">Plover support thread history</p>
+
+        <form class="history__controls" method="get" action="/">
+          <input class="history__search" type="text" name="q" value="{{ q | e }}"
+                 placeholder="Search by user, ID, or log key…" autocomplete="off">
+          <div class="history__filters">
+            <button name="status" value="all"    class="chip {% if status == 'all' %}chip--on{% endif %}">All</button>
+            <button name="status" value="open"   class="chip {% if status == 'open' %}chip--on{% endif %}">Open</button>
+            <button name="status" value="closed" class="chip {% if status == 'closed' %}chip--on{% endif %}">Closed</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="history__meta">{{ total }} thread{{ '' if total == 1 else 's' }}</div>
+
+      <div class="history__list">
+        {% for e in entries %}
+        <a class="logrow" href="{{ prefix }}/{{ e.key }}">
+          <img class="logrow__av" src="{{ e.recipient_avatar }}" alt="" onerror="this.style.visibility='hidden'">
+          <div class="logrow__main">
+            <div class="logrow__name">{{ e.recipient_name | e }}
+              <span class="logrow__pill {{ 'open' if e.open else 'closed' }}">{{ 'Open' if e.open else 'Closed' }}</span>
+            </div>
+            <div class="logrow__sub">ID {{ e.recipient_id }} · {{ e.key }}</div>
+          </div>
+          <div class="logrow__right">
+            <div class="logrow__count">{{ e.message_count }} msg</div>
+            <div class="logrow__date" title="{{ e.created }}">{{ e.ago }}</div>
+          </div>
+        </a>
+        {% else %}
+        <div class="history__empty">No threads found.</div>
+        {% endfor %}
+      </div>
+
+      {% if total_pages > 1 %}
+      <div class="history__pager">
+        {% if page > 1 %}
+        <a class="chip" href="/?q={{ q | urlencode }}&status={{ status }}&page={{ page - 1 }}">‹ Prev</a>
+        {% endif %}
+        <span class="history__page">Page {{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a class="chip" href="/?q={{ q | urlencode }}&status={{ status }}&page={{ page + 1 }}">Next ›</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </section>
+
+    <aside class="sidebar">
+      {% if current_user %}
+      <div class="sidebar__me">
+        <img class="sidebar__me-av" src="{{ current_user.avatar }}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="sidebar__me-info">
+          <div class="sidebar__me-name">{{ current_user.name | e }}</div>
+          <a class="sidebar__logout" href="/auth/logout">Log out</a>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="sidebar__section-title">Online — {{ online | length }}</div>
+      <div class="sidebar__online">
+        {% for u in online %}
+        <div class="online-user">
+          <span class="online-dot"></span>
+          <img class="online-av" src="{{ u.avatar }}" alt="" onerror="this.style.visibility='hidden'">
+          <span class="online-name">{{ u.name | e }}</span>
+        </div>
+        {% else %}
+        <div class="sidebar__empty">No one else online.</div>
+        {% endfor %}
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+{% endblock %}

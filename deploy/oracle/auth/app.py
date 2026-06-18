@@ -1,8 +1,14 @@
-"""Discord OAuth2 forward-auth proxy for the Modmail logviewer.
+"""Discord OAuth2 forward-auth proxy for the Pebble logviewer.
 
 Sits behind Caddy's `forward_auth`. Visitors are sent through Discord's OAuth2
 flow; only members of GUILD_ID who hold REQUIRED_ROLE_ID are issued a signed
 session cookie and allowed through to the logviewer.
+
+It also:
+  - forwards the logged-in user's id/name/avatar to the logviewer as
+    X-Auth-* headers (so the logviewer can show a profile + logout), and
+  - records active sessions in the `pebble_online` collection so the
+    logviewer can render a "who's online" list.
 
 Endpoints (all under /auth, routed straight to this service by Caddy):
   /auth/verify    - called by Caddy for every request; 200 if authed, else 302 to login
@@ -15,6 +21,7 @@ import os
 import time
 import secrets
 import urllib.parse
+from datetime import datetime, timezone
 
 import requests
 from flask import Flask, request, redirect, make_response
@@ -37,6 +44,28 @@ app = Flask(__name__)
 session_signer = URLSafeTimedSerializer(SECRET_KEY, salt="modmail-logs-session")
 state_signer = URLSafeTimedSerializer(SECRET_KEY, salt="modmail-logs-state")
 
+# --- Optional Mongo connection for the "who's online" presence list ----------
+MONGO_URI = os.environ.get("CONNECTION_URI") or os.environ.get("MONGO_URI")
+online_col = None
+if MONGO_URI:
+    try:
+        from pymongo import MongoClient
+
+        online_col = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000).modmail_bot.pebble_online
+        # Expire presence records ~10 min after the last sighting.
+        online_col.create_index("last_seen", expireAfterSeconds=600)
+    except Exception as exc:  # presence is best-effort; never block auth
+        print("Presence tracking disabled:", exc)
+        online_col = None
+
+
+def _avatar_url(user):
+    uid = user.get("id")
+    ahash = user.get("avatar")
+    if uid and ahash:
+        return f"https://cdn.discordapp.com/avatars/{uid}/{ahash}.png?size=64"
+    return "https://cdn.discordapp.com/embed/avatars/0.png"
+
 
 def _redirect_to_login():
     """Send the browser into Discord's OAuth2 flow, remembering where it wanted to go."""
@@ -57,13 +86,36 @@ def _redirect_to_login():
 @app.route("/auth/verify")
 def verify():
     token = request.cookies.get(COOKIE_NAME)
-    if token:
+    if not token:
+        return _redirect_to_login()
+    try:
+        data = session_signer.loads(token, max_age=SESSION_TTL)
+    except (BadSignature, SignatureExpired):
+        return _redirect_to_login()
+
+    # Authorised — tell the logviewer who this is.
+    resp = make_response("", 200)
+    resp.headers["X-Auth-Id"] = str(data.get("id", ""))
+    resp.headers["X-Auth-Name"] = urllib.parse.quote(data.get("name", "User"))
+    resp.headers["X-Auth-Avatar"] = urllib.parse.quote(data.get("avatar", ""))
+
+    # Record presence for the "who's online" list (skip static/auth requests).
+    uri = request.headers.get("X-Forwarded-Uri", "")
+    if online_col is not None and not uri.startswith(("/static", "/auth")):
         try:
-            session_signer.loads(token, max_age=SESSION_TTL)
-            return ("", 200)
-        except (BadSignature, SignatureExpired):
+            online_col.update_one(
+                {"user_id": data.get("id")},
+                {"$set": {
+                    "user_id": data.get("id"),
+                    "name": data.get("name", "User"),
+                    "avatar": data.get("avatar", ""),
+                    "last_seen": datetime.now(timezone.utc),
+                }},
+                upsert=True,
+            )
+        except Exception:
             pass
-    return _redirect_to_login()
+    return resp
 
 
 @app.route("/auth/login")
@@ -112,8 +164,13 @@ def callback():
         return ("You do not have the required role to view these logs.", 403)
 
     # Authorised: issue a signed session cookie and return to the original page.
-    user_id = member.get("user", {}).get("id")
-    value = session_signer.dumps({"id": user_id, "ts": int(time.time())})
+    user = member.get("user", {})
+    value = session_signer.dumps({
+        "id": user.get("id"),
+        "name": user.get("global_name") or user.get("username") or "User",
+        "avatar": _avatar_url(user),
+        "ts": int(time.time()),
+    })
     dest = state_data.get("dest", "/")
     if not dest.startswith("/"):
         dest = "/"
@@ -126,6 +183,14 @@ def callback():
 
 @app.route("/auth/logout")
 def logout():
+    # Drop the presence record so the user disappears from "who's online".
+    token = request.cookies.get(COOKIE_NAME)
+    if token and online_col is not None:
+        try:
+            data = session_signer.loads(token, max_age=SESSION_TTL)
+            online_col.delete_one({"user_id": data.get("id")})
+        except Exception:
+            pass
     resp = make_response(redirect("/auth/login"))
     resp.delete_cookie(COOKIE_NAME)
     return resp
