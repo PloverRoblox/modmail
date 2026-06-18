@@ -133,6 +133,23 @@ image and injects that stylesheet as the last `<link>` in the templates, so the
 bot's message-rendering logic is untouched — only the appearance changes. Edit
 the CSS and re-run `docker compose up -d --build` to iterate on the design.
 
+### Link-preview (Open Graph) branding
+
+The Dockerfile also replaces the per-thread Open Graph tags with a fixed Pebble
+card (title, description, and image) so shared log links show consistent
+branding instead of leaking recipient details. The preview image is served from
+your own domain at `/static/img/og.png`.
+
+`logviewer/static/img/og.png` is currently a **plain placeholder**. Replace it
+with the real image (keep the same path/filename, ideally ~1200×630 PNG/JPG),
+then rebuild:
+
+```bash
+docker compose up -d --build
+```
+
+Discord caches previews, so use Discord's link or repost to refresh the embed.
+
 ## Updating later
 
 ```bash
