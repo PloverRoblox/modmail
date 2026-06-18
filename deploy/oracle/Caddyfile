@@ -1,0 +1,25 @@
+# Edge proxy for the logviewer, sitting between Cloudflare Tunnel and the app.
+# TLS is terminated by Cloudflare, so Caddy just serves plain HTTP on :8080.
+#
+# Point your Cloudflare Tunnel public hostname at  http://caddy:8080  (NOT the
+# logviewer directly) so every request passes through the Discord auth check.
+
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	# Auth endpoints are handled directly by the Discord OAuth proxy.
+	handle /auth/* {
+		reverse_proxy authproxy:5000
+	}
+
+	# Everything else must pass the role check before reaching the logviewer.
+	handle {
+		forward_auth authproxy:5000 {
+			uri /auth/verify
+		}
+		reverse_proxy logviewer:8000
+	}
+}

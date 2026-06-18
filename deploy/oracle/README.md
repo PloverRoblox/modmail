@@ -44,8 +44,8 @@ In the [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/) →
 3. Add a **Public Hostname**:
    - **Subdomain / Domain:** e.g. `logs` + your Cloudflare-managed domain.
    - **Type:** `HTTP`
-   - **URL:** `logviewer:8000`  (the container name + port — they share the
-     Docker network)
+   - **URL:** `caddy:8080`  (the auth-proxy edge — **not** the logviewer
+     directly, so every request goes through the Discord role check)
 4. Save. Cloudflare auto-creates the DNS record and HTTPS cert for that hostname.
 
 ## 3. Install Docker on the VM
@@ -79,6 +79,30 @@ Fill in:
   just reconnects to the same database).
 - `LOG_URL` — your tunnel hostname, e.g. `https://logs.yourdomain.com`
 - `TUNNEL_TOKEN` — the token you copied in step 2.
+- The `DISCORD_*`, `REQUIRED_ROLE_ID`, and `SESSION_SECRET` values — see the next
+  step.
+
+## 4b. Lock the logs behind Discord (role-gated)
+
+The logs are protected by a small Discord OAuth2 proxy (`authproxy` + `caddy`):
+only members of `GUILD_ID` who hold `REQUIRED_ROLE_ID` can view them.
+
+1. In the [Discord Developer Portal](https://discord.com/developers/applications)
+   → your application → **OAuth2**:
+   - Copy the **Client ID** and **Client Secret** into `DISCORD_CLIENT_ID` /
+     `DISCORD_CLIENT_SECRET`.
+   - Under **Redirects**, add **exactly**:
+     `https://<your-log-domain>/auth/callback`
+     (e.g. `https://pebble.getplover.com/auth/callback`) and **Save Changes**.
+2. In `.env`, set:
+   - `DISCORD_REDIRECT_URI` to that same `…/auth/callback` URL.
+   - `REQUIRED_ROLE_ID` to the role ID allowed to view logs.
+   - `GUILD_ID` is reused from the bot config above.
+   - `SESSION_SECRET` to a random string: `openssl rand -hex 32`.
+
+The proxy requests the `identify` and `guilds.members.read` scopes — the latter
+is what lets it read the visitor's roles in your server. No bot invite or extra
+permissions are needed.
 
 ## 5. Launch
 
@@ -88,8 +112,9 @@ docker compose logs -f bot          # watch it connect to Discord
 docker compose logs cloudflared     # should show "Registered tunnel connection"
 ```
 
-Open `https://logs.yourdomain.com` in a browser — the logviewer should load.
-Closed-thread log links will now use that domain.
+Open `https://logs.yourdomain.com` in a browser — you'll be sent to Discord to
+log in, and only granted through if you hold the required role. Closed-thread log
+links will now use that domain.
 
 ## 6. Decommission the old host
 
@@ -111,8 +136,14 @@ cd deploy/oracle && docker compose up -d --build
   MongoDB/Atlas network access list (Atlas → Network Access) allows the VM's
   public IP.
 - **Logviewer domain shows Cloudflare error 502/1033:** the tunnel can't reach
-  the logviewer. Confirm the Public Hostname URL is exactly `logviewer:8000`,
-  and that `docker compose logs cloudflared` shows a registered connection.
+  the edge. Confirm the Public Hostname URL is exactly `caddy:8080`, and that
+  `docker compose logs cloudflared` shows a registered connection.
+- **Discord login loops or "Invalid OAuth2 redirect_uri":** the redirect in the
+  Developer Portal must match `DISCORD_REDIRECT_URI` exactly, including the
+  `https://` and the `/auth/callback` path.
+- **"You do not have the required role":** the logged-in user lacks
+  `REQUIRED_ROLE_ID` in `GUILD_ID`, or those IDs are wrong. Check
+  `docker compose logs authproxy`.
 - **`cloudflared` keeps restarting:** the `TUNNEL_TOKEN` is wrong or missing —
   re-copy it from the tunnel's install screen.
 - **Logviewer container exits with "exec format error" on the ARM VM:** the

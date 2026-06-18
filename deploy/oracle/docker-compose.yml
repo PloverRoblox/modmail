@@ -28,15 +28,39 @@ services:
     environment:
       # Logviewer reads MONGO_URI; reuse the same database the bot writes to.
       - MONGO_URI=${CONNECTION_URI}
-    # No public port: Cloudflare Tunnel reaches the logviewer privately over the
-    # Docker network at http://logviewer:8000. To test locally without the
-    # tunnel, temporarily add:  ports: ["8000:8000"]
+    # No public port: only the Caddy auth proxy talks to the logviewer, privately
+    # over the Docker network at http://logviewer:8000.
+
+  # Discord OAuth2 forward-auth proxy. Verifies the visitor is a member of
+  # GUILD_ID holding REQUIRED_ROLE_ID before Caddy lets them reach the logviewer.
+  authproxy:
+    build:
+      context: ./auth
+    image: modmail-authproxy:latest
+    container_name: modmail-authproxy
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - logviewer
+
+  # Caddy sits in front of the logviewer and runs every request past the auth
+  # proxy (Discord role check) before serving it. This is what the tunnel points
+  # at. TLS is handled by Cloudflare, so Caddy serves plain HTTP on :8080.
+  caddy:
+    image: caddy:2-alpine
+    container_name: modmail-caddy
+    restart: always
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - authproxy
+      - logviewer
 
   # Cloudflare Tunnel: makes an OUTBOUND connection to Cloudflare, so the
   # logviewer is published at your domain with automatic HTTPS and no inbound
-  # ports opened. Create the tunnel in the Cloudflare Zero Trust dashboard,
-  # route your hostname to the service http://logviewer:8000, and paste the
-  # tunnel token into TUNNEL_TOKEN in .env. See README.md.
+  # ports opened. In the Cloudflare dashboard, route your public hostname to
+  # the service  http://caddy:8080  (the auth proxy edge, NOT the logviewer).
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: modmail-cloudflared
@@ -45,4 +69,4 @@ services:
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     depends_on:
-      - logviewer
+      - caddy
