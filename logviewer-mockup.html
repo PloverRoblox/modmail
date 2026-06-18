@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logviewer — Apple Dark Mockup (fake data)</title>
+<style>
+  :root{
+    /* Apple dark-mode layered system greys */
+    --bg:#000000;
+    --elev1:#1c1c1e;
+    --elev2:#2c2c2e;
+    --elev3:#3a3a3c;
+    --label:#ffffff;
+    --label2:rgba(235,235,245,.60);
+    --label3:rgba(235,235,245,.30);
+    --sep:rgba(84,84,88,.65);
+    --blue:#0A84FF;
+    --green:#30D158;
+    --orange:#FF9F0A;
+    --red:#FF453A;
+    --purple:#BF5AF2;
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:var(--bg);color:var(--label);font-family:var(--font);letter-spacing:-.01em;}
+  .page{display:none;min-height:100vh;}
+  .page.active{display:block;}
+  a{color:var(--blue);text-decoration:none;}
+
+  /* ---- splash ---- */
+  .splash{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+  .card{background:var(--elev1);border:.5px solid var(--sep);border-radius:22px;padding:56px 44px;
+    max-width:680px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  .logo-title{font-size:52px;font-weight:700;letter-spacing:-.03em;margin:0 0 10px;
+    background:linear-gradient(180deg,#fff,#c7c7cc);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .sub{color:var(--label2);font-size:19px;font-weight:400;margin:0 0 32px;line-height:1.4;}
+  .btn-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+  .btn{display:inline-block;background:var(--elev2);color:var(--label);padding:11px 22px;border-radius:12px;
+    font-size:15px;font-weight:500;border:.5px solid var(--sep);transition:background .15s,transform .1s;}
+  .btn:hover{background:var(--elev3);}
+  .btn:active{transform:scale(.97);}
+  .btn.primary{background:var(--blue);border-color:transparent;color:#fff;}
+  .btn.primary:hover{filter:brightness(1.1);}
+
+  /* ---- navbar (frosted) ---- */
+  .navbar{position:sticky;top:0;height:52px;display:flex;align-items:center;gap:14px;padding:0 22px;z-index:10;
+    background:rgba(28,28,30,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:.5px solid var(--sep);}
+  .navbar .home{font-size:20px;color:var(--blue);font-weight:600;}
+  .navbar .title{font-size:16px;font-weight:600;}
+
+  /* ---- log page ---- */
+  .wrap{max-width:860px;margin:0 auto;padding:22px 16px 90px;}
+  .meta{background:var(--elev1);border:.5px solid var(--sep);border-radius:18px;padding:22px 24px;
+    display:flex;gap:18px;align-items:center;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,.4);}
+  .meta img{width:64px;height:64px;border-radius:50%;flex:0 0 auto;border:.5px solid var(--sep);}
+  .meta h2{margin:0;font-size:21px;font-weight:600;display:flex;align-items:center;gap:10px;}
+  .meta .uid{color:var(--label2);font-size:13px;margin-top:3px;}
+  .meta .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px 26px;margin-top:16px;
+    padding-top:16px;border-top:.5px solid var(--sep);grid-column:1/-1;width:100%;}
+  .meta .grid div span{display:block;color:var(--label3);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  .meta .grid div b{font-weight:500;font-size:14px;margin-top:2px;display:block;}
+  .metabody{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;}
+  .metahead{flex:1;}
+  .pill{display:inline-flex;align-items:center;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+  .pill.closed{background:rgba(255,69,58,.16);color:var(--red);}
+
+  .toolbar{display:flex;justify-content:flex-end;margin-bottom:10px;}
+  .seg{background:var(--elev2);border:.5px solid var(--sep);border-radius:10px;padding:7px 14px;font-size:13px;
+    font-weight:500;color:var(--label);cursor:pointer;font-family:var(--font);}
+  .seg:hover{background:var(--elev3);}
+
+  .chat{background:var(--elev1);border:.5px solid var(--sep);border-radius:18px;overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);}
+  .msg{display:flex;gap:14px;padding:14px 20px;border-top:.5px solid var(--sep);transition:background .12s;}
+  .msg:first-of-type{border-top:none;}
+  .msg:hover{background:rgba(255,255,255,.03);}
+  .msg img.av{width:40px;height:40px;border-radius:50%;flex:0 0 auto;border:.5px solid var(--sep);}
+  .msg .head{display:flex;align-items:baseline;gap:9px;margin-bottom:3px;flex-wrap:wrap;}
+  .msg .name{font-weight:600;font-size:15px;}
+  .msg .name.mod{color:var(--blue);}
+  .msg .name.user{color:var(--green);}
+  .msg .time{color:var(--label3);font-size:12px;}
+  .msg .text{font-size:15px;line-height:1.46;color:var(--label);}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.03em;}
+  .tag.staff{background:rgba(10,132,255,.18);color:var(--blue);}
+  .tag.anon{background:rgba(191,90,242,.18);color:var(--purple);}
+  .att{margin-top:10px;}
+  .att img{max-width:300px;border-radius:12px;display:block;border:.5px solid var(--sep);}
+  .att a.file{display:inline-flex;align-items:center;gap:9px;background:var(--elev2);border:.5px solid var(--sep);
+    border-radius:12px;padding:11px 15px;color:var(--label);font-size:13px;margin-top:8px;font-weight:500;}
+
+  .note{background:rgba(255,159,10,.07);}
+  .note .name{color:var(--orange);}
+  .note .label{color:var(--orange);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+  .internal-hidden .note{display:none;}
+
+  .system{text-align:center;color:var(--label2);font-size:13px;padding:13px 20px;border-top:.5px solid var(--sep);}
+  .system b{color:var(--label);font-weight:600;}
+
+  /* ---- raw ---- */
+  .raw{max-width:860px;margin:0 auto;padding:28px 16px;}
+  .raw pre{background:var(--elev1);border:.5px solid var(--sep);color:var(--label2);border-radius:16px;
+    padding:24px;white-space:pre-wrap;font:13px/1.7 "SF Mono",ui-monospace,Menlo,monospace;}
+  .raw pre b{color:var(--label);}
+
+  /* ---- switcher ---- */
+  .switcher{position:fixed;top:16px;right:16px;width:212px;z-index:100;border-radius:16px;padding:14px;
+    background:rgba(44,44,46,.72);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);
+    border:.5px solid var(--sep);box-shadow:0 20px 50px rgba(0,0,0,.6);}
+  .switcher h4{margin:0 0 2px;font-size:13px;font-weight:600;}
+  .switcher .hint{font-size:11px;color:var(--label2);margin:0 0 12px;line-height:1.35;}
+  .switcher button{display:block;width:100%;text-align:left;background:transparent;color:var(--label);
+    border:none;border-radius:10px;padding:9px 11px;margin:3px 0;font-size:14px;cursor:pointer;font-family:var(--font);}
+  .switcher button:hover{background:rgba(255,255,255,.06);}
+  .switcher button.sel{background:var(--blue);color:#fff;font-weight:500;}
+  .badge{position:fixed;bottom:14px;left:14px;background:rgba(255,69,58,.2);color:var(--red);font-size:11px;
+    font-weight:600;padding:6px 12px;border-radius:20px;z-index:100;border:.5px solid rgba(255,69,58,.35);
+    backdrop-filter:blur(10px);}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<div class="page active" id="home">
+  <div class="splash">
+    <div class="card">
+      <h1 class="logo-title">Logviewer</h1>
+      <p class="sub">This site is used to display Modmail log entries.</p>
+      <div class="btn-row">
+        <a class="btn primary" href="#">Discord</a>
+        <a class="btn" href="#">Github</a>
+        <a class="btn" href="#">Docs</a>
+        <a class="btn" href="#">Patreon</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOG VIEW ============ -->
+<div class="page" id="log">
+  <div class="navbar"><span class="home">􀎟</span><span class="title">Logviewer</span></div>
+  <div class="wrap">
+    <div class="meta">
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Pebble&backgroundColor=0A84FF" alt="">
+      <div class="metabody">
+        <div class="metahead">
+          <h2>starlight_fox <span class="pill closed">Closed</span></h2>
+          <div class="uid">User ID · 482910337554841600</div>
+        </div>
+        <div class="grid">
+          <div><span>Created</span><b>Jun 18, 2026 · 2:14 PM</b></div>
+          <div><span>Closed by</span><b>aurora</b></div>
+          <div><span>Messages</span><b>7</b></div>
+          <div><span>Reason</span><b>Resolved</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar"><button class="seg" id="noteToggle">Hide internal messages</button></div>
+
+    <div class="chat" id="chat">
+      <div class="system"><b>starlight_fox</b> opened a Modmail thread · Jun 18, 2026 · 2:14 PM</div>
+
+      <div class="msg">
+        <img class="av" src="https://api.dicebear.com/7.x/thumbs/svg?seed=fox" alt="">
+        <div>
+          <div class="head"><span class="name user">starlight_fox</span><span class="time">Today at 2:14 PM</span></div>
+          <div class="text">hey, i think i was muted by mistake? i didn't post anything in #general 😕</div>
+        </div>
+      </div>
+
+      <div class="msg note">
+        <img class="av" src="https://api.dicebear.com/7.x/thumbs/svg?seed=aurora" alt="">
+        <div>
+          <div class="head"><span class="name">aurora</span><span class="label">Internal note</span><span class="time">2:15 PM</span></div>
+          <div class="text">Checking audit log — looks like an automod false positive on the link filter.</div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <img class="av" src="https://api.dicebear.com/7.x/thumbs/svg?seed=aurora" alt="">
+        <div>
+          <div class="head"><span class="name mod">aurora</span><span class="tag staff">Staff</span><span class="time">Today at 2:16 PM</span></div>
+          <div class="text">Hi! Thanks for reaching out — you're right, that was an automod mistake. I've lifted the mute. Sorry about that!</div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <img class="av" src="https://api.dicebear.com/7.x/thumbs/svg?seed=fox" alt="">
+        <div>
+          <div class="head"><span class="name user">starlight_fox</span><span class="time">Today at 2:17 PM</span></div>
+          <div class="text">oh amazing, thank you!! here's the screenshot i mentioned:</div>
+          <div class="att"><img src="https://placehold.co/300x170/1c1c1e/8e8e93?text=screenshot.png" alt=""></div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <img class="av" src="https://api.dicebear.com/7.x/thumbs/svg?seed=aurora" alt="">
+        <div>
+          <div class="head"><span class="name mod">Anonymous</span><span class="tag anon">Anon</span><span class="time">Today at 2:18 PM</span></div>
+          <div class="text">No problem at all. I've also whitelisted that domain so it won't happen again.</div>
+          <div class="att"><a class="file" href="#">􀈷 automod_config.txt · 2.1 KB</a></div>
+        </div>
+      </div>
+
+      <div class="msg note">
+        <img class="av" src="https://api.dicebear.com/7.x/thumbs/svg?seed=aurora" alt="">
+        <div>
+          <div class="head"><span class="name">aurora</span><span class="label">Internal note</span><span class="time">2:19 PM</span></div>
+          <div class="text">Domain added to allowlist. Closing as resolved.</div>
+        </div>
+      </div>
+
+      <div class="system">Thread closed by <b>aurora</b> · Jun 18, 2026 · 2:20 PM · “Resolved”</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ NOT FOUND ============ -->
+<div class="page" id="notfound">
+  <div class="splash">
+    <div class="card">
+      <h1 class="logo-title">Not found</h1>
+      <p class="sub">The page you are looking for is not here.</p>
+      <div class="btn-row"><a class="btn primary" href="#">Back to home</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RAW ============ -->
+<div class="page" id="raw">
+  <div class="raw">
+<pre><b>Thread with starlight_fox (482910337554841600)</b>
+Created: 2026-06-18 14:14 UTC   |   Closed by: aurora   |   Messages: 7
+
+[14:14] starlight_fox: hey, i think i was muted by mistake?
+[14:15] (NOTE) aurora: automod false positive on link filter
+[14:16] aurora (staff): Hi! That was an automod mistake. Mute lifted.
+[14:17] starlight_fox: thank you!! [attachment: screenshot.png]
+[14:18] Anonymous (staff): Whitelisted the domain. [attachment: automod_config.txt]
+[14:19] (NOTE) aurora: Domain added to allowlist. Closing.
+[14:20] *** Thread closed by aurora — "Resolved" ***</pre>
+  </div>
+</div>
+
+<!-- ============ SWITCHER ============ -->
+<div class="switcher">
+  <h4>Logviewer pages</h4>
+  <p class="hint">Apple dark-mode mockup · fake data</p>
+  <button data-go="home" class="sel">􀎞  Home / splash</button>
+  <button data-go="log">􀌤  Log view</button>
+  <button data-go="raw">􀈷  Raw log</button>
+  <button data-go="notfound">􀇿  Not found</button>
+</div>
+<div class="badge">MOCKUP · NOT REAL DATA</div>
+
+<script>
+  const pages=document.querySelectorAll('.page');
+  const btns=document.querySelectorAll('.switcher button');
+  btns.forEach(b=>b.addEventListener('click',()=>{
+    pages.forEach(p=>p.classList.remove('active'));
+    document.getElementById(b.dataset.go).classList.add('active');
+    btns.forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');window.scrollTo(0,0);
+  }));
+  const t=document.getElementById('noteToggle'),chat=document.getElementById('chat');
+  t.addEventListener('click',()=>{
+    chat.classList.toggle('internal-hidden');
+    t.textContent=chat.classList.contains('internal-hidden')?'Show internal messages':'Hide internal messages';
+  });
+</script>
+</body>
+</html>

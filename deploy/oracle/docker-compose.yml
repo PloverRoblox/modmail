@@ -20,7 +20,10 @@ services:
       - .env
 
   logviewer:
-    image: ghcr.io/modmail-dev/logviewer:master
+    # Custom image: upstream logviewer + Apple dark-mode skin (see ./logviewer).
+    build:
+      context: ./logviewer
+    image: modmail-logviewer-apple:latest
     container_name: modmail-logviewer
     restart: always
     env_file:

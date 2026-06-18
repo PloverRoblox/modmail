@@ -8,9 +8,11 @@ inbound ports are exposed.
 What you get:
 - `bot` — built from this repo's `Dockerfile`, so your fork's changes are
   included and the image is native to the VM's architecture.
-- `logviewer` — the web UI for closed-thread log links.
+- `logviewer` — the web UI for closed-thread log links, built from
+  `./logviewer` with an **Apple dark-mode skin** layered on the upstream image.
 - `cloudflared` — a Cloudflare Tunnel that serves the logviewer at your domain
   over HTTPS, with no open ports on the VM.
+- `authproxy` + `caddy` — Discord OAuth2 role gate in front of the logviewer.
 - No database container — the bot and logviewer both point at your current
   `CONNECTION_URI`.
 
@@ -122,6 +124,14 @@ Once the new instance is confirmed working, stop the bot on your previous host
 so two instances don't run against the same database at once.
 
 ---
+
+## Customising the logviewer look
+
+The logviewer UI is restyled by `logviewer/static/css/applemode.css` (an Apple
+dark-mode skin using SF Pro). `logviewer/Dockerfile` builds on the upstream
+image and injects that stylesheet as the last `<link>` in the templates, so the
+bot's message-rendering logic is untouched — only the appearance changes. Edit
+the CSS and re-run `docker compose up -d --build` to iterate on the design.
 
 ## Updating later
 

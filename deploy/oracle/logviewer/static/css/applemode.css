@@ -1,0 +1,185 @@
+/* ============================================================================
+   Apple dark-mode skin for the Modmail logviewer.
+   Loaded last, so it overrides Materialize + the logviewer's own stylesheets.
+   Targets the existing template classes; no markup/logic is changed.
+   ========================================================================== */
+
+/* SF Pro (real SF Pro on Apple devices via -apple-system; webfont elsewhere). */
+@import url('https://fonts.cdnfonts.com/css/sf-pro-display');
+
+:root {
+  --bg:      #000000;
+  --elev1:   #1c1c1e;
+  --elev2:   #2c2c2e;
+  --elev3:   #3a3a3c;
+  --label:   #ffffff;
+  --label2:  rgba(235,235,245,.60);
+  --label3:  rgba(235,235,245,.30);
+  --sep:     rgba(84,84,88,.65);
+  --blue:    #0A84FF;
+  --green:   #30D158;
+  --orange:  #FF9F0A;
+  --red:     #FF453A;
+  --purple:  #BF5AF2;
+  --font: 'SF Pro Display','SF Pro Text',-apple-system,BlinkMacSystemFont,
+          'Inter','Helvetica Neue',system-ui,sans-serif;
+}
+
+html, body {
+  background: var(--bg) !important;
+  color: var(--label) !important;
+  font-family: var(--font) !important;
+  letter-spacing: -.01em;
+}
+* { -webkit-font-smoothing: antialiased; }
+::selection { background: rgba(10,132,255,.35); }
+a { color: var(--blue); }
+
+/* ---------- Navbar (frosted glass) ---------- */
+.navbar-fixed nav, nav, nav.lighten-1 {
+  background: rgba(28,28,30,.72) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none !important;
+  border-bottom: .5px solid var(--sep);
+}
+nav .brand-logo i, #dash { color: var(--blue) !important; }
+
+/* ---------- Splash card (index + not_found) ---------- */
+.container .card-panel, #main-card {
+  background: var(--elev1) !important;
+  border: .5px solid var(--sep);
+  border-radius: 22px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6) !important;
+  padding: 56px 44px !important;
+}
+#dashbots, h1#dashbots, .header#dashbots {
+  font-family: var(--font) !important;
+  font-weight: 700 !important;
+  font-size: 52px !important;
+  letter-spacing: -.03em !important;
+  background: linear-gradient(180deg,#fff,#c7c7cc);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent !important;
+}
+.grey-text { color: var(--label2) !important; }
+
+.my-button {
+  background: var(--elev2) !important;
+  color: var(--label) !important;
+  border: .5px solid var(--sep);
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin: 6px;
+  transition: background .15s, transform .1s;
+}
+.my-button:hover { background: var(--elev3) !important; }
+.my-button:active { transform: scale(.97); }
+.row.center a.my-button:first-child {     /* lead button -> system blue */
+  background: var(--blue) !important;
+  border-color: transparent;
+  color: #fff !important;
+}
+
+/* ---------- Log page: metadata header ---------- */
+.entry { max-width: 860px; margin: 0 auto; padding: 0 16px 90px; }
+.info {
+  background: var(--elev1);
+  border: .5px solid var(--sep);
+  border-radius: 18px;
+  padding: 22px 24px;
+  display: flex; gap: 18px; align-items: center;
+  margin: 18px 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+}
+.info__metadata { flex: 1; min-width: 0; }
+.info__guild-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: .5px solid var(--sep);
+}
+.info__guild-name { font-size: 21px; font-weight: 600; color: var(--label); }
+.info__channel-topic { color: var(--label2); font-size: 14px; margin-top: 4px; }
+.info__channel-topic b { color: var(--label); font-weight: 600; }
+.info__channel-message-count {
+  color: var(--label3); font-size: 12px; margin-top: 12px;
+  text-transform: uppercase; letter-spacing: .04em; font-weight: 600;
+}
+
+/* ---------- Log page: chat ---------- */
+.chatlog {
+  background: var(--elev1);
+  border: .5px solid var(--sep);
+  border-radius: 18px;
+  overflow: hidden;
+  max-width: 860px; margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+}
+.chatlog__message-group {
+  display: flex; gap: 14px;
+  padding: 14px 20px;
+  margin: 0;
+  border-top: .5px solid var(--sep);
+  transition: background .12s;
+}
+.chatlog__message-group:first-child { border-top: none; }
+.chatlog__message-group:hover, .active_hover:hover { background: rgba(255,255,255,.03); }
+.perma_hover { background: rgba(10,132,255,.12) !important; }
+
+.chatlog__author-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: .5px solid var(--sep);
+}
+.chatlog__messages { display: block; flex: 1; min-width: 0; }
+.chatlog__author-name { font-weight: 600; font-size: 15px; color: var(--label); }
+.chatlog__timestamp { color: var(--label3); font-size: 12px; margin-left: 8px; }
+.chatlog__content { font-size: 15px; line-height: 1.46; color: var(--label); margin-top: 3px; }
+.chatlog__edited-timestamp { color: var(--label3); font-size: 11px; margin-left: 6px; }
+
+/* role / type tags */
+.mod-tag, .internal-tag, .system-tag {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .03em;
+  margin-left: 8px; vertical-align: middle;
+}
+.mod-tag      { background: rgba(10,132,255,.18); color: var(--blue); }
+.internal-tag { background: rgba(255,159,10,.18); color: var(--orange); }
+.system-tag   { background: rgba(142,142,147,.22); color: var(--label2); }
+.anonymous .mod-tag { background: rgba(191,90,242,.18); color: var(--purple); }
+
+/* internal notes get a subtle amber wash + coloured name */
+.internal.chatlog__message-group { background: rgba(255,159,10,.07); }
+.internal .chatlog__author-name { color: var(--orange); }
+
+/* attachments */
+.chatlog__attachment { margin-top: 10px; }
+.chatlog__attachment-thumbnail {
+  max-width: 300px; border-radius: 12px; border: .5px solid var(--sep);
+}
+.chatlog__attachment a { color: var(--blue); }
+
+/* code blocks */
+pre, .pre--multiline {
+  background: #0d0d10 !important;
+  border: .5px solid var(--sep);
+  border-radius: 12px;
+}
+.pre--inline { background: var(--elev2); border-radius: 6px; padding: 1px 5px; }
+
+/* ---------- Internal-messages toggle (Materialize switch -> iOS toggle) ---- */
+.switch label .lever {
+  background: var(--elev3);
+  width: 42px; height: 26px; border-radius: 20px; margin: 0 8px;
+}
+.switch label .lever:after {
+  width: 22px; height: 22px; top: 2px; left: 2px;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+.switch label input[type=checkbox]:checked + .lever { background: var(--green); }
+.switch label input[type=checkbox]:checked + .lever:after { left: 18px; background: #fff; }
+
+/* tooltips */
+.tooltiptext { background: var(--elev3) !important; color: var(--label) !important; border-radius: 8px; }
