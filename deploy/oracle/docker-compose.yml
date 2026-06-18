@@ -1,0 +1,48 @@
+# Oracle Cloud deployment for Modmail (this fork) + Logviewer.
+#
+# - `bot` is built from this repository's Dockerfile so your fork's changes are
+#   included, and so the image is native to the host architecture (the Always
+#   Free Ampere A1 VM is ARM64 / aarch64).
+# - `logviewer` is pulled from the upstream registry. If it fails to start on an
+#   ARM VM (manifest/exec format error), see the note in README.md.
+# - There is no `mongo` service here: this setup points at your EXISTING database
+#   via CONNECTION_URI in .env (your current MongoDB / Atlas URI).
+
+services:
+  bot:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: modmail-fork:latest
+    container_name: modmail-bot
+    restart: always
+    env_file:
+      - .env
+
+  logviewer:
+    image: ghcr.io/modmail-dev/logviewer:master
+    container_name: modmail-logviewer
+    restart: always
+    env_file:
+      - .env
+    environment:
+      # Logviewer reads MONGO_URI; reuse the same database the bot writes to.
+      - MONGO_URI=${CONNECTION_URI}
+    # No public port: Cloudflare Tunnel reaches the logviewer privately over the
+    # Docker network at http://logviewer:8000. To test locally without the
+    # tunnel, temporarily add:  ports: ["8000:8000"]
+
+  # Cloudflare Tunnel: makes an OUTBOUND connection to Cloudflare, so the
+  # logviewer is published at your domain with automatic HTTPS and no inbound
+  # ports opened. Create the tunnel in the Cloudflare Zero Trust dashboard,
+  # route your hostname to the service http://logviewer:8000, and paste the
+  # tunnel token into TUNNEL_TOKEN in .env. See README.md.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: modmail-cloudflared
+    restart: always
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - logviewer
